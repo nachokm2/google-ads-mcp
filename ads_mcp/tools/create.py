@@ -175,6 +175,38 @@ def _check_new_daily_budget(
     return currency
 
 
+def _set_bidding(
+    campaign,
+    bidding_strategy: str,
+    cpc_bid_micros: int | None = None,
+    target_cpa_micros: int | None = None,
+    target_roas: float | None = None,
+) -> None:
+    """Sets a standard bidding strategy on a campaign being created.
+
+    cpc_bid_micros is the max CPC limit of MAXIMIZE_CLICKS; for MANUAL_CPC
+    the bid belongs to the ad group.
+    """
+    # SetInParent selects the strategy even when none of its fields are set.
+    campaign_pb = type(campaign).pb(campaign)
+    if bidding_strategy == "MANUAL_CPC":
+        campaign_pb.manual_cpc.SetInParent()
+    elif bidding_strategy == "MAXIMIZE_CLICKS":
+        campaign_pb.target_spend.SetInParent()
+        if cpc_bid_micros:
+            campaign.target_spend.cpc_bid_ceiling_micros = cpc_bid_micros
+    elif bidding_strategy == "MAXIMIZE_CONVERSIONS":
+        campaign_pb.maximize_conversions.SetInParent()
+        if target_cpa_micros:
+            campaign.maximize_conversions.target_cpa_micros = target_cpa_micros
+    elif bidding_strategy == "MAXIMIZE_CONVERSION_VALUE":
+        campaign_pb.maximize_conversion_value.SetInParent()
+        if target_roas:
+            campaign.maximize_conversion_value.target_roas = target_roas
+    else:
+        raise ToolError(f"Unsupported bidding strategy {bidding_strategy!r}.")
+
+
 def _new_campaign_operations(
     client: GoogleAdsClient,
     customer_id: str,
@@ -461,19 +493,7 @@ def create_search_campaign(
     campaign.network_settings.target_search_network = include_search_partners
     campaign.network_settings.target_content_network = False
     campaign.network_settings.target_partner_search_network = False
-    # SetInParent selects the bidding strategy even when none of its fields
-    # are set.
-    campaign_pb = type(campaign).pb(campaign)
-    if bidding_strategy == "MANUAL_CPC":
-        campaign_pb.manual_cpc.SetInParent()
-    elif bidding_strategy == "MAXIMIZE_CLICKS":
-        campaign_pb.target_spend.SetInParent()
-        if cpc_bid_micros:
-            campaign.target_spend.cpc_bid_ceiling_micros = cpc_bid_micros
-    else:
-        campaign_pb.maximize_conversions.SetInParent()
-        if target_cpa_micros:
-            campaign.maximize_conversions.target_cpa_micros = target_cpa_micros
+    _set_bidding(campaign, bidding_strategy, cpc_bid_micros, target_cpa_micros)
 
     ad_group_operation = client.get_type("MutateOperation")
     ad_group = ad_group_operation.ad_group_operation.create

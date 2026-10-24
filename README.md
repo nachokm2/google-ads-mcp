@@ -41,6 +41,14 @@ The `mutate` namespace adds tools that modify Google Ads data:
   optional YouTube videos.
 - `create_asset_group`: Add an asset group to an existing Performance Max
   campaign.
+- `create_display_campaign`: Create a Display campaign (Google Display Network
+  only) with a responsive display ad built from images, logos and texts.
+- `create_demand_gen_video_campaign`: Create YouTube video ads. The Google Ads
+  API cannot create classic Video campaigns, so this creates a Demand Gen
+  campaign with a video responsive ad that, by default, only serves on YouTube
+  (in-stream, in-feed and Shorts).
+- `create_demand_gen_image_campaign`: Create a Demand Gen campaign of image
+  ads, by default on YouTube in-feed, Discover and Gmail.
 
 Images can be `https://` URLs, which the server downloads and uploads, or the
 ids of image assets already in the account. YouTube videos are passed as video

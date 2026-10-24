@@ -45,6 +45,7 @@ from ads_mcp.tools.create import (
     _clean_texts,
     _new_campaign_operations,
     _send_operations,
+    _set_bidding,
 )
 from ads_mcp.tools.mutate import (
     _CREATE_ANNOTATIONS,
@@ -275,16 +276,20 @@ def _logo_refs(logo_images: List[str], landscape_logo_images: List[str]):
     return {"LOGO": logos, "LANDSCAPE_LOGO": landscape_logos}
 
 
-def _video_ids(youtube_videos: List[str]) -> List[str]:
+def _video_ids(
+    youtube_videos: List[str],
+    minimum: int = 0,
+    maximum: int = MAX_YOUTUBE_VIDEOS,
+) -> List[str]:
     try:
         video_ids = list(
             dict.fromkeys(youtube_video_id(v) for v in youtube_videos)
         )
     except AssetError as ex:
         raise ToolError(str(ex))
-    if len(video_ids) > MAX_YOUTUBE_VIDEOS:
+    if not minimum <= len(video_ids) <= maximum:
         raise ToolError(
-            f"At most {MAX_YOUTUBE_VIDEOS} YouTube videos are allowed, got "
+            f"Between {minimum} and {maximum} YouTube videos are needed, got "
             f"{len(video_ids)}."
         )
     return video_ids
@@ -485,15 +490,12 @@ def create_performance_max_campaign(
         language_ids,
     )
     campaign.brand_guidelines_enabled = True
-    campaign_pb = type(campaign).pb(campaign)
-    if bidding_strategy == "MAXIMIZE_CONVERSIONS":
-        campaign_pb.maximize_conversions.SetInParent()
-        if target_cpa_micros:
-            campaign.maximize_conversions.target_cpa_micros = target_cpa_micros
-    else:
-        campaign_pb.maximize_conversion_value.SetInParent()
-        if target_roas:
-            campaign.maximize_conversion_value.target_roas = target_roas
+    _set_bidding(
+        campaign,
+        bidding_strategy,
+        target_cpa_micros=target_cpa_micros,
+        target_roas=target_roas,
+    )
 
     # With brand guidelines, the business name and logos belong to the
     # campaign instead of the asset group.

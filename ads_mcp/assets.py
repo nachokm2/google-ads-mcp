@@ -51,6 +51,7 @@ IMAGE_SPECS = {
     "MARKETING_IMAGE": ImageSpec(1.91, "1.91:1", 600, 314),
     "SQUARE_MARKETING_IMAGE": ImageSpec(1.0, "1:1", 300, 300),
     "PORTRAIT_MARKETING_IMAGE": ImageSpec(0.8, "4:5", 480, 600),
+    "TALL_PORTRAIT_MARKETING_IMAGE": ImageSpec(0.5625, "9:16", 600, 1067),
     "LOGO": ImageSpec(1.0, "1:1", 128, 128),
     "LANDSCAPE_LOGO": ImageSpec(4.0, "4:1", 512, 128),
 }
