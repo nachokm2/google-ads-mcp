@@ -159,6 +159,97 @@ def _currency_code(client: GoogleAdsClient, customer_id: str) -> str:
     return row.customer.currency_code
 
 
+def _check_new_daily_budget(
+    client: GoogleAdsClient, customer_id: str, budget_micros: int
+) -> str:
+    """Applies the server limit for new budgets and returns the currency."""
+    currency = _currency_code(client, customer_id)
+    max_budget = _max_new_daily_budget(currency)
+    if max_budget is not None and _from_micros(budget_micros) > max_budget:
+        raise ToolError(
+            f"The daily budget of {_from_micros(budget_micros):g} {currency} "
+            f"is above the {max_budget:g} {currency} this server allows for "
+            f"new campaigns. Use a smaller budget, or ask the server "
+            f"administrator to raise {MAX_NEW_DAILY_BUDGET_ENV_VAR}."
+        )
+    return currency
+
+
+def _new_campaign_operations(
+    client: GoogleAdsClient,
+    customer_id: str,
+    campaign_name: str,
+    channel_type: str,
+    budget_micros: int,
+    status: str,
+    start: datetime.date | None,
+    end: datetime.date | None,
+    location_ids: List[str],
+    language_ids: List[str],
+):
+    """Builds the budget, campaign and targeting operations of a new campaign.
+
+    Returns the operations and the campaign being created, so the caller can
+    set the fields specific to its channel type.
+    """
+    budget_resource_name = (
+        f"customers/{customer_id}/campaignBudgets/{_BUDGET_TEMP_ID}"
+    )
+    campaign_resource_name = (
+        f"customers/{customer_id}/campaigns/{_CAMPAIGN_TEMP_ID}"
+    )
+
+    budget_operation = client.get_type("MutateOperation")
+    budget = budget_operation.campaign_budget_operation.create
+    budget.resource_name = budget_resource_name
+    # Budget names must be unique, so the creation time is added.
+    budget.name = (
+        f"{campaign_name} budget {datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
+    )
+    budget.amount_micros = budget_micros
+    budget.delivery_method = client.enums.BudgetDeliveryMethodEnum.STANDARD
+    budget.explicitly_shared = False
+
+    campaign_operation = client.get_type("MutateOperation")
+    campaign = campaign_operation.campaign_operation.create
+    campaign.resource_name = campaign_resource_name
+    campaign.name = campaign_name
+    campaign.status = client.enums.CampaignStatusEnum[status]
+    campaign.advertising_channel_type = client.enums.AdvertisingChannelTypeEnum[
+        channel_type
+    ]
+    campaign.campaign_budget = budget_resource_name
+    campaign.contains_eu_political_advertising = (
+        client.enums.EuPoliticalAdvertisingStatusEnum.DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING
+    )
+    campaign.geo_target_type_setting.positive_geo_target_type = (
+        client.enums.PositiveGeoTargetTypeEnum.PRESENCE
+    )
+    if start:
+        campaign.start_date_time = f"{start} 00:00:00"
+    if end:
+        campaign.end_date_time = f"{end} 23:59:59"
+
+    operations = [budget_operation, campaign_operation]
+    for location_id in location_ids:
+        operation = client.get_type("MutateOperation")
+        criterion = operation.campaign_criterion_operation.create
+        criterion.campaign = campaign_resource_name
+        criterion.location.geo_target_constant = (
+            f"geoTargetConstants/{location_id}"
+        )
+        operations.append(operation)
+    for language_id in language_ids:
+        operation = client.get_type("MutateOperation")
+        criterion = operation.campaign_criterion_operation.create
+        criterion.campaign = campaign_resource_name
+        criterion.language.language_constant = (
+            f"languageConstants/{language_id}"
+        )
+        operations.append(operation)
+    return operations, campaign
+
+
 def _send_operations(
     client: GoogleAdsClient,
     customer_id: str,
@@ -348,58 +439,28 @@ def create_search_campaign(
     )
 
     client = utils.get_googleads_client(login_customer_id=login_customer_id)
-    currency = _currency_code(client, customer_id)
-    max_budget = _max_new_daily_budget(currency)
-    if max_budget is not None and _from_micros(budget_micros) > max_budget:
-        raise ToolError(
-            f"The daily budget of {_from_micros(budget_micros):g} {currency} "
-            f"is above the {max_budget:g} {currency} this server allows for "
-            f"new campaigns. Use a smaller budget, or ask the server "
-            f"administrator to raise {MAX_NEW_DAILY_BUDGET_ENV_VAR}."
-        )
+    currency = _check_new_daily_budget(client, customer_id, budget_micros)
 
-    budget_resource_name = (
-        f"customers/{customer_id}/campaignBudgets/{_BUDGET_TEMP_ID}"
+    operations, campaign = _new_campaign_operations(
+        client,
+        customer_id,
+        campaign_name,
+        "SEARCH",
+        budget_micros,
+        status,
+        start,
+        end,
+        location_ids,
+        language_ids,
     )
-    campaign_resource_name = (
-        f"customers/{customer_id}/campaigns/{_CAMPAIGN_TEMP_ID}"
-    )
+    campaign_resource_name = campaign.resource_name
     ad_group_resource_name = (
         f"customers/{customer_id}/adGroups/{_AD_GROUP_TEMP_ID}"
-    )
-    operations = []
-
-    budget_operation = client.get_type("MutateOperation")
-    budget = budget_operation.campaign_budget_operation.create
-    budget.resource_name = budget_resource_name
-    # Budget names must be unique, so the creation time is added.
-    budget.name = (
-        f"{campaign_name} budget {datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
-    )
-    budget.amount_micros = budget_micros
-    budget.delivery_method = client.enums.BudgetDeliveryMethodEnum.STANDARD
-    budget.explicitly_shared = False
-    operations.append(budget_operation)
-
-    campaign_operation = client.get_type("MutateOperation")
-    campaign = campaign_operation.campaign_operation.create
-    campaign.resource_name = campaign_resource_name
-    campaign.name = campaign_name
-    campaign.status = client.enums.CampaignStatusEnum[status]
-    campaign.advertising_channel_type = (
-        client.enums.AdvertisingChannelTypeEnum.SEARCH
-    )
-    campaign.campaign_budget = budget_resource_name
-    campaign.contains_eu_political_advertising = (
-        client.enums.EuPoliticalAdvertisingStatusEnum.DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING
     )
     campaign.network_settings.target_google_search = True
     campaign.network_settings.target_search_network = include_search_partners
     campaign.network_settings.target_content_network = False
     campaign.network_settings.target_partner_search_network = False
-    campaign.geo_target_type_setting.positive_geo_target_type = (
-        client.enums.PositiveGeoTargetTypeEnum.PRESENCE
-    )
     # SetInParent selects the bidding strategy even when none of its fields
     # are set.
     campaign_pb = type(campaign).pb(campaign)
@@ -413,28 +474,6 @@ def create_search_campaign(
         campaign_pb.maximize_conversions.SetInParent()
         if target_cpa_micros:
             campaign.maximize_conversions.target_cpa_micros = target_cpa_micros
-    if start:
-        campaign.start_date_time = f"{start} 00:00:00"
-    if end:
-        campaign.end_date_time = f"{end} 23:59:59"
-    operations.append(campaign_operation)
-
-    for location_id in location_ids:
-        operation = client.get_type("MutateOperation")
-        criterion = operation.campaign_criterion_operation.create
-        criterion.campaign = campaign_resource_name
-        criterion.location.geo_target_constant = (
-            f"geoTargetConstants/{location_id}"
-        )
-        operations.append(operation)
-    for language_id in language_ids:
-        operation = client.get_type("MutateOperation")
-        criterion = operation.campaign_criterion_operation.create
-        criterion.campaign = campaign_resource_name
-        criterion.language.language_constant = (
-            f"languageConstants/{language_id}"
-        )
-        operations.append(operation)
 
     ad_group_operation = client.get_type("MutateOperation")
     ad_group = ad_group_operation.ad_group_operation.create

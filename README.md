@@ -34,6 +34,17 @@ The `mutate` namespace adds tools that modify Google Ads data:
 - `create_ad_group`, `add_keywords`, `create_responsive_search_ad`: Add an ad
   group (optionally with keywords and an ad), keywords or a responsive search
   ad to an existing Search campaign.
+- `create_performance_max_campaign`: Create a complete Performance Max
+  campaign in one atomic step: budget, campaign, targeting, brand assets
+  (business name and logos, linked to the campaign as brand guidelines) and an
+  asset group with its headlines, long headlines, descriptions, images and
+  optional YouTube videos.
+- `create_asset_group`: Add an asset group to an existing Performance Max
+  campaign.
+
+Images can be `https://` URLs, which the server downloads and uploads, or the
+ids of image assets already in the account. YouTube videos are passed as video
+ids or URLs and must already be published on YouTube.
 
 They are disabled in the default `tools_config.yaml`. To enable them, point
 `GOOGLE_ADS_MCP_TOOLS_CONFIG` at `ads_mcp/tools_config_write.yaml` (in the
@@ -56,6 +67,10 @@ Safeguards:
   new budgets in currencies it does not list are rejected.
 - Ad texts, URLs and dates are validated before calling the API (headlines up
   to 30 characters, descriptions up to 90, display URL paths up to 15).
+- Images are checked for their aspect ratio and minimum size before upload.
+  They are only downloaded over `https://` from public addresses (private,
+  loopback and link-local addresses are rejected, also after redirects), up
+  to 5 MB, as PNG, JPEG or GIF.
 - Every call is logged with the authenticated user's email, the customer and
   the change.
 
