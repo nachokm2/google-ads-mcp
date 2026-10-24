@@ -27,6 +27,13 @@ The `mutate` namespace adds tools that modify Google Ads data:
 - `update_campaign_budget`: Change the daily budget of a campaign.
 - `add_negative_keywords`: Add negative keywords to a campaign or an ad group.
 - `set_ad_group_cpc_bid`, `set_keyword_cpc_bid`: Change max CPC bids.
+- `create_search_campaign`: Create a complete Search campaign in one atomic
+  step: budget, campaign, location and language targeting (Chile and Spanish
+  by default), an ad group, its keywords and a responsive search ad. New
+  campaigns are ENABLED unless `status="PAUSED"` is passed.
+- `create_ad_group`, `add_keywords`, `create_responsive_search_ad`: Add an ad
+  group (optionally with keywords and an ad), keywords or a responsive search
+  ad to an existing Search campaign.
 
 They are disabled in the default `tools_config.yaml`. To enable them, point
 `GOOGLE_ADS_MCP_TOOLS_CONFIG` at `ads_mcp/tools_config_write.yaml` (in the
@@ -44,6 +51,11 @@ Safeguards:
   always allowed.
 - Changing a budget shared by several campaigns requires
   `allow_shared_budget=true`.
+- `GOOGLE_ADS_MCP_MAX_NEW_DAILY_BUDGET` optionally limits the daily budget of
+  new campaigns per currency, for example `CLP:50000,USD:100`. When it is set,
+  new budgets in currencies it does not list are rejected.
+- Ad texts, URLs and dates are validated before calling the API (headlines up
+  to 30 characters, descriptions up to 90, display URL paths up to 15).
 - Every call is logged with the authenticated user's email, the customer and
   the change.
 

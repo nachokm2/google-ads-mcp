@@ -584,22 +584,22 @@ class TestCpcBidTools(MutateToolTestCase):
         self.assertIn("negative keyword", str(context.exception))
 
 
+async def list_tools(config_file):
+    """Mounts the tools with a bundled config file and lists them."""
+    config = ToolsConfig.load(
+        str(importlib.resources.files("ads_mcp").joinpath(config_file))
+    )
+    parent = FastMCP("Test Parent")
+    with patch("ads_mcp.config.ToolsConfig.load", return_value=config):
+        initialize_and_mount_tools(parent)
+    return await parent.list_tools()
+
+
 class TestMutateToolsMounting(unittest.IsolatedAsyncioTestCase):
     """Verifies that the mutate tools are only exposed when enabled."""
 
-    async def list_tools(self, config_file):
-        config = ToolsConfig.load(
-            str(importlib.resources.files("ads_mcp").joinpath(config_file))
-        )
-        parent = FastMCP("Test Parent")
-        with patch("ads_mcp.config.ToolsConfig.load", return_value=config):
-            initialize_and_mount_tools(parent)
-        return await parent.list_tools()
-
     async def test_disabled_in_default_config(self):
-        tool_names = [
-            t.name for t in await self.list_tools("tools_config.yaml")
-        ]
+        tool_names = [t.name for t in await list_tools("tools_config.yaml")]
 
         self.assertIn("search_search", tool_names)
         for name in MUTATE_TOOL_NAMES:
@@ -609,9 +609,7 @@ class TestMutateToolsMounting(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(ToolsConfig().is_namespace_enabled("mutate"))
 
     async def test_enabled_in_write_config(self):
-        tools = {
-            t.name: t for t in await self.list_tools("tools_config_write.yaml")
-        }
+        tools = {t.name: t for t in await list_tools("tools_config_write.yaml")}
 
         self.assertIn("search_search", tools)
         for name in MUTATE_TOOL_NAMES:
