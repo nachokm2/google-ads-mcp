@@ -218,17 +218,20 @@ def _new_campaign_operations(
     end: datetime.date | None,
     location_ids: List[str],
     language_ids: List[str],
+    budget_temp_id: int = _BUDGET_TEMP_ID,
+    campaign_temp_id: int = _CAMPAIGN_TEMP_ID,
 ):
     """Builds the budget, campaign and targeting operations of a new campaign.
 
     Returns the operations and the campaign being created, so the caller can
-    set the fields specific to its channel type.
+    set the fields specific to its channel type. Requests that create several
+    campaigns pass different temporary ids for each one.
     """
     budget_resource_name = (
-        f"customers/{customer_id}/campaignBudgets/{_BUDGET_TEMP_ID}"
+        f"customers/{customer_id}/campaignBudgets/{budget_temp_id}"
     )
     campaign_resource_name = (
-        f"customers/{customer_id}/campaigns/{_CAMPAIGN_TEMP_ID}"
+        f"customers/{customer_id}/campaigns/{campaign_temp_id}"
     )
 
     budget_operation = client.get_type("MutateOperation")

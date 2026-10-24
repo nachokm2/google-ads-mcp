@@ -31,6 +31,12 @@ The `mutate` namespace adds tools that modify Google Ads data:
   step: budget, campaign, location and language targeting (Chile and Spanish
   by default), an ad group, its keywords and a responsive search ad. New
   campaigns are ENABLED unless `status="PAUSED"` is passed.
+- `create_search_campaigns`: Create up to 20 complete Search campaigns in one
+  atomic request. Each campaign has its own budget, bidding, targeting and
+  negative keywords, and up to 100 ad groups, each with its keywords (each
+  with its own match type and optional bid), 1 to 3 responsive search ads and
+  negative keywords. All input problems are reported at once, before anything
+  is sent to Google Ads.
 - `create_ad_group`, `add_keywords`, `create_responsive_search_ad`: Add an ad
   group (optionally with keywords and an ad), keywords or a responsive search
   ad to an existing Search campaign.
