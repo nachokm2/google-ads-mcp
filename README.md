@@ -31,9 +31,34 @@ The `mutate` namespace adds tools that modify Google Ads data:
   step: budget, campaign, location and language targeting (Chile and Spanish
   by default), an ad group, its keywords and a responsive search ad. New
   campaigns are ENABLED unless `status="PAUSED"` is passed.
+- `create_search_campaigns`: Create up to 20 complete Search campaigns in one
+  atomic request. Each campaign has its own budget, bidding, targeting and
+  negative keywords, and up to 100 ad groups, each with its keywords (each
+  with its own match type and optional bid), 1 to 3 responsive search ads and
+  negative keywords. All input problems are reported at once, before anything
+  is sent to Google Ads.
 - `create_ad_group`, `add_keywords`, `create_responsive_search_ad`: Add an ad
   group (optionally with keywords and an ad), keywords or a responsive search
   ad to an existing Search campaign.
+- `create_performance_max_campaign`: Create a complete Performance Max
+  campaign in one atomic step: budget, campaign, targeting, brand assets
+  (business name and logos, linked to the campaign as brand guidelines) and an
+  asset group with its headlines, long headlines, descriptions, images and
+  optional YouTube videos.
+- `create_asset_group`: Add an asset group to an existing Performance Max
+  campaign.
+- `create_display_campaign`: Create a Display campaign (Google Display Network
+  only) with a responsive display ad built from images, logos and texts.
+- `create_demand_gen_video_campaign`: Create YouTube video ads. The Google Ads
+  API cannot create classic Video campaigns, so this creates a Demand Gen
+  campaign with a video responsive ad that, by default, only serves on YouTube
+  (in-stream, in-feed and Shorts).
+- `create_demand_gen_image_campaign`: Create a Demand Gen campaign of image
+  ads, by default on YouTube in-feed, Discover and Gmail.
+
+Images can be `https://` URLs, which the server downloads and uploads, or the
+ids of image assets already in the account. YouTube videos are passed as video
+ids or URLs and must already be published on YouTube.
 
 They are disabled in the default `tools_config.yaml`. To enable them, point
 `GOOGLE_ADS_MCP_TOOLS_CONFIG` at `ads_mcp/tools_config_write.yaml` (in the
@@ -56,6 +81,10 @@ Safeguards:
   new budgets in currencies it does not list are rejected.
 - Ad texts, URLs and dates are validated before calling the API (headlines up
   to 30 characters, descriptions up to 90, display URL paths up to 15).
+- Images are checked for their aspect ratio and minimum size before upload.
+  They are only downloaded over `https://` from public addresses (private,
+  loopback and link-local addresses are rejected, also after redirects), up
+  to 5 MB, as PNG, JPEG or GIF.
 - Every call is logged with the authenticated user's email, the customer and
   the change.
 
