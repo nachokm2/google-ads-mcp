@@ -147,6 +147,12 @@ To enable it, set the following environment variables:
 - `GOOGLE_ADS_MCP_STORAGE_FIRESTORE_DATABASE`: (Optional) Firestore database name for `firestore` persistent storage. Defaults to `(default)`.
 - `GOOGLE_ADS_MCP_STORAGE_ENCRYPTION_KEY`: (Optional) Encryption key for stored OAuth tokens.
 - `GOOGLE_ADS_MCP_STORAGE_DISABLE_ENCRYPTION`: (Optional) Set to `true` to disable token encryption.
+- `GOOGLE_ADS_MCP_ALLOWED_EMAILS`: (Recommended) Comma-separated emails and
+  `@domains` allowed to use the server, for example
+  `ana@gmail.com,@example.com`. Other signed-in accounts see no tools and
+  cannot call them. Their Google email must be verified. When unset, any
+  Google account that can sign in through your OAuth consent screen may use
+  the server.
 
 The `redis` and `firestore` backends need their storage library installed
 alongside the server: `pip install py-key-value-aio[redis]` and
