@@ -25,6 +25,7 @@ from fastmcp import FastMCP
 from fastmcp.server.auth.providers.google import GoogleProvider
 from mcp import types as mcp_types
 from mcp.server.subscriptions import InMemorySubscriptionBus, ListenHandler
+from ads_mcp.access_control import add_access_control
 from ads_mcp.auth_storage import create_client_storage
 
 _CLIENT_ID = os.environ.get("GOOGLE_ADS_MCP_OAUTH_CLIENT_ID")
@@ -52,6 +53,7 @@ if _CLIENT_ID and _CLIENT_SECRET:
 
     auth = GoogleProvider(**provider_kwargs)
     mcp = FastMCP("Google Ads Server", auth=auth)
+    add_access_control(mcp)
 else:
     mcp = FastMCP("Google Ads Server")
 
