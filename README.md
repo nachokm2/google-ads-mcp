@@ -36,6 +36,20 @@ are in the account currency and dates use the account time zone:
   eligible to serve.
 - `list_recommendations`: Google's active recommendations with their
   estimated impact.
+- `get_keyword_ideas`, `get_keyword_volumes`: Keyword Planner ideas from seed
+  keywords or a URL, and the monthly searches, competition and top of page
+  bids of specific keywords, per country and language. Keyword Planner needs
+  Basic or Standard Google Ads API access for the Google Cloud project.
+- `get_account_alerts`: Problems that need attention today, by severity:
+  enabled campaigns that cannot serve or stopped serving, disapproved ads,
+  campaigns limited by budget, spend far above or below the previous week,
+  conversions that fell to zero and campaigns that end soon.
+- `get_policy_issues`: Disapproved or limited ads and campaign assets, with
+  the policies and the text or URL Google flagged.
+- `get_change_history`: Changes of the last 30 days with who made them, from
+  where (website, API or Google) and the old and new values.
+- `list_negative_keyword_lists`: Shared negative keyword lists, the campaigns
+  using them and their keywords.
 
 ### Write tools (disabled by default)
 
@@ -93,6 +107,40 @@ The `mutate` namespace adds tools that modify Google Ads data:
 - `update_campaign`: Rename a campaign or change or remove its dates.
 - `remove_campaign`, `remove_ad_group`: Remove a campaign or an ad group
   permanently. `confirm_name` must be the exact name, typed by the user.
+- `clone_search_campaign`: Copy a Search campaign, for example to another
+  country, in one atomic request: budget, bidding, networks, languages, ad
+  schedule, negative keywords, shared negative lists, campaign assets, ad
+  groups, keywords and responsive search ads, with new locations and optional
+  text and URL replacements (for example `{"Chile": "Perú"}`).
+- `update_campaign_locations`, `set_campaign_languages`, `set_ad_schedule`,
+  `set_device_bid_adjustments`: Change the locations (targeted and excluded),
+  languages, ad schedule and per-device bid adjustments of a campaign. The
+  last targeted location cannot be removed unless `allow_all_locations=true`,
+  since a campaign without locations serves in every country.
+- `create_negative_keyword_list`, `add_to_negative_keyword_list`,
+  `set_negative_keyword_list_campaigns`: Shared negative keyword lists applied
+  to many campaigns at once. Keywords accept Google Ads Editor syntax:
+  `[exact]` and `"phrase"`.
+- `set_keyword_status`: Pause, enable or remove keywords by id or text.
+- `remove_ad`: Remove an ad permanently.
+- `replace_responsive_search_ad`: Edit a responsive search ad. Google Ads does
+  not allow changing ad texts, so it creates the edited copy (keeping pinned
+  headlines) and pauses or removes the old ad in the same request.
+- `list_crm_pipelines`, `sync_crm_conversions`: Upload the deals that reached
+  the won stage of Bitrix24 pipelines (for example "Matriculado") as offline
+  conversions identified by the contact's email and phone, with the deal
+  amount as value and the deal id as order id, so syncing the same days
+  twice counts nothing twice.
+- `create_customer_match_list`, `sync_crm_audience`: Create a Customer Match
+  audience and fill it with the contacts of Bitrix24 deals, for example to
+  exclude enrolled students. Uploads require accepting Google's Customer
+  Match terms.
+
+The Bitrix24 tools read the CRM through an inbound webhook with the CRM
+permission, set in `GOOGLE_ADS_MCP_BITRIX24_WEBHOOK_URL`. The server hashes
+emails and phones itself, so they never pass through the agent, and the
+webhook URL is never logged or returned. They also need the Data Manager API
+(see above).
 
 Images can be `https://` URLs, which the server downloads and uploads, or the
 ids of image assets already in the account. YouTube videos are passed as video
