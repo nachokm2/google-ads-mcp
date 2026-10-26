@@ -10,7 +10,9 @@ license = "Apache-2.0"
 dependencies = [
     "google-ads>=33.0.0",
     "mcp[cli]>=2.0.0,<3",
-    "fastmcp>=4.0.6,<5"
+    "fastmcp>=4.0.6,<5",
+    # Time zone data for reports on platforms without a system database.
+    "tzdata"
 ]
 
 description = "MCP Server for Google Ads, depends on Google Ads API."

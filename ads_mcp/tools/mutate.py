@@ -33,6 +33,7 @@ from google.protobuf.field_mask_pb2 import FieldMask
 from mcp.types import ToolAnnotations
 
 import ads_mcp.utils as utils
+from ads_mcp.errors import format_google_ads_exception
 from ads_mcp.mcp_header_interceptor import MCPHeaderInterceptor
 
 mutate_mcp = FastMCP("mutate")
@@ -173,12 +174,7 @@ def _get_service(client: GoogleAdsClient, service_name: str):
 
 
 def _raise_tool_error(ex: GoogleAdsException) -> None:
-    error_msgs = [
-        f"Google Ads API Error: {error.message}" for error in ex.failure.errors
-    ]
-    raise ToolError(
-        f"Request ID: {ex.request_id}\n" + "\n".join(error_msgs)
-    ) from ex
+    raise ToolError(format_google_ads_exception(ex)) from ex
 
 
 def _find_one(

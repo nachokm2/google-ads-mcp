@@ -26,6 +26,7 @@ from fastmcp.server.auth.providers.google import GoogleProvider
 from mcp import types as mcp_types
 from mcp.server.subscriptions import InMemorySubscriptionBus, ListenHandler
 from ads_mcp.access_control import add_access_control
+from ads_mcp import data_manager
 from ads_mcp.auth_storage import create_client_storage
 
 _CLIENT_ID = os.environ.get("GOOGLE_ADS_MCP_OAUTH_CLIENT_ID")
@@ -46,6 +47,11 @@ if _CLIENT_ID and _CLIENT_SECRET:
             "https://www.googleapis.com/auth/adwords",
         ],
     }
+    if data_manager.enabled():
+        # Needed to upload offline conversions; users grant it at sign-in.
+        provider_kwargs["required_scopes"].append(
+            data_manager.DATA_MANAGER_SCOPE
+        )
     if _JWT_SIGNING_KEY:
         provider_kwargs["jwt_signing_key"] = _JWT_SIGNING_KEY
     if client_storage is not None:

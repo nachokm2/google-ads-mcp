@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Literal
 from fastmcp.exceptions import ToolError
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
+from google.api_core.exceptions import GoogleAPICallError
 
 import ads_mcp.utils as utils
 from ads_mcp.assets import (
@@ -159,6 +160,8 @@ def _search(client: GoogleAdsClient, customer_id: str, query: str) -> List[Any]:
         return list(ga_service.search(customer_id=customer_id, query=query))
     except GoogleAdsException as ex:
         _raise_tool_error(ex)
+    except GoogleAPICallError as ex:
+        raise ToolError(f"Google Ads could not run the query: {ex.message}")
 
 
 def _image_refs(values: List[str], field_type: str, minimum: int, maximum: int):
