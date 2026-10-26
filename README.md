@@ -78,6 +78,15 @@ The `mutate` namespace adds tools that modify Google Ads data:
   callouts and structured snippets to a campaign or to the whole account.
 - `create_offline_conversion_action`: Create a conversion action for offline
   uploads, for example enrollments from a CRM.
+- `upload_offline_conversions`, `get_conversion_upload_status`: Upload
+  offline conversions identified by gclid or, for enhanced conversions for
+  leads, by email or phone (hashed with SHA-256 on the server and never logged),
+  and check how Google processed them. Google Ads only accepts uploads from
+  new integrations through the Data Manager API, so these tools need it:
+  enable the Data Manager API in the Google Cloud project of the OAuth
+  client, add the `https://www.googleapis.com/auth/datamanager` scope to its
+  consent screen and set `GOOGLE_ADS_MCP_DATA_MANAGER=true`, which makes the
+  server request that scope at sign-in.
 - `apply_recommendations`, `dismiss_recommendations`: Apply or dismiss
   Google's recommendations. The API cannot validate them without acting, so
   with `validate_only=true` they only list what would change.
