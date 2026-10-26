@@ -8,4 +8,5 @@ namespaces:
   customers: true
   search: true
   metadata: true
+  reports: true
   mutate: true

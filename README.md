@@ -18,6 +18,25 @@ to provide several
 - `list_accessible_customers`: Returns ids of customers directly accessible
   by the user authenticating the call.
 
+### Report tools
+
+The `reports` namespace adds read-only reports, enabled by default. Amounts
+are in the account currency and dates use the account time zone:
+
+- `get_performance_report`: Impressions, clicks, cost, conversions, CTR,
+  average CPC, conversion rate and cost per conversion per account, campaign,
+  ad group, keyword or ad, optionally compared with the previous period.
+- `get_search_terms_report`: The searches that triggered ads, with suggested
+  negative keywords (terms with clicks but no conversions, or with words like
+  "gratis" or "empleo").
+- `get_budget_pacing`: This month's spend against each campaign's budget, with
+  the projected spend for the month.
+- `get_asset_performance`: Performance labels of responsive search ad texts
+  (with the LOW ones to replace) and Performance Max assets that are not
+  eligible to serve.
+- `list_recommendations`: Google's active recommendations with their
+  estimated impact.
+
 ### Write tools (disabled by default)
 
 The `mutate` namespace adds tools that modify Google Ads data:
@@ -55,6 +74,16 @@ The `mutate` namespace adds tools that modify Google Ads data:
   (in-stream, in-feed and Shorts).
 - `create_demand_gen_image_campaign`: Create a Demand Gen campaign of image
   ads, by default on YouTube in-feed, Discover and Gmail.
+- `add_sitelinks`, `add_callouts`, `add_structured_snippet`: Add sitelinks,
+  callouts and structured snippets to a campaign or to the whole account.
+- `create_offline_conversion_action`: Create a conversion action for offline
+  uploads, for example enrollments from a CRM.
+- `apply_recommendations`, `dismiss_recommendations`: Apply or dismiss
+  Google's recommendations. The API cannot validate them without acting, so
+  with `validate_only=true` they only list what would change.
+- `update_campaign`: Rename a campaign or change or remove its dates.
+- `remove_campaign`, `remove_ad_group`: Remove a campaign or an ad group
+  permanently. `confirm_name` must be the exact name, typed by the user.
 
 Images can be `https://` URLs, which the server downloads and uploads, or the
 ids of image assets already in the account. YouTube videos are passed as video
