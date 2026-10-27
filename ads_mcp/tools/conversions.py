@@ -359,6 +359,25 @@ def upload_offline_conversions(
         validate_only: If true, validates the upload without applying it.
         login_customer_id: Optional manager customer ID that gives access to the customer.
     """
+    return _upload(
+        "upload_offline_conversions",
+        customer_id,
+        conversion_action_id,
+        conversions,
+        validate_only,
+        login_customer_id,
+    )
+
+
+def _upload(
+    tool_name: str,
+    customer_id: str | int,
+    conversion_action_id: str | int,
+    conversions: List[OfflineConversion],
+    validate_only: bool,
+    login_customer_id: str | int | None,
+) -> Dict[str, Any]:
+    """Validates the conversions and sends them in one Data Manager request."""
     customer_id = _clean_id(customer_id, "customer_id")
     conversion_action_id = _clean_id(
         conversion_action_id, "conversion_action_id"
@@ -439,7 +458,7 @@ def upload_offline_conversions(
         },
     )
     result = _result(
-        "upload_offline_conversions",
+        tool_name,
         customer_id,
         validate_only,
         [
