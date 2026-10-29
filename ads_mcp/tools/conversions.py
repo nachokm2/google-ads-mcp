@@ -485,15 +485,18 @@ def _upload(
 
 @mutate_mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 def get_conversion_upload_status(request_id: str) -> Dict[str, Any]:
-    """Shows how Google processed an upload_offline_conversions request.
+    """Shows how Google processed an upload of conversions or audience members.
 
-    Returns the status (PROCESSING, SUCCESS, PARTIAL_SUCCESS or FAILED), how
-    many conversions were sent and, when some failed, how many failed for
+    Works with the request ids of upload_offline_conversions,
+    sync_crm_conversions and sync_crm_audience. Returns the status
+    (PROCESSING, SUCCESS, PARTIAL_SUCCESS or FAILED), how many conversions
+    or audience members were sent and, when some failed, how many failed for
     each reason (for example a click older than the lookback window or a
-    click id from another account).
+    click id from another account). For audiences it also returns the match
+    rate range Google reports once it has matched the members.
 
     Args:
-        request_id: The request_id returned by upload_offline_conversions.
+        request_id: The request_id returned by the upload.
     """
     request_id = request_id.strip()
     if not _REQUEST_ID.match(request_id):
@@ -504,14 +507,36 @@ def get_conversion_upload_status(request_id: str) -> Dict[str, Any]:
     )
     statuses = []
     for entry in response.get("requestStatusPerDestination", []):
-        destination = entry.get("destination", {})
-        statuses.append(
-            {
-                "conversion_action_id": destination.get("productDestinationId"),
+        destination_id = entry.get("destination", {}).get(
+            "productDestinationId"
+        )
+        audience = entry.get("audienceMembersIngestionStatus")
+        if audience is not None:
+            # Only one status is set, by the type of data uploaded; Customer
+            # Match uploads report userDataIngestionStatus.
+            ingestion = next(iter(audience.values()), {})
+            match_rate = ingestion.get("uploadMatchRateRange")
+            sent = {
+                "user_list_id": destination_id,
+                "status": entry.get("requestStatus"),
+                "members_sent": int(ingestion.get("recordCount", 0)),
+                "match_rate_range": (
+                    match_rate.removeprefix("MATCH_RATE_RANGE_")
+                    if match_rate
+                    else None
+                ),
+            }
+        else:
+            sent = {
+                "conversion_action_id": destination_id,
                 "status": entry.get("requestStatus"),
                 "conversions_sent": int(
                     entry.get("eventsIngestionStatus", {}).get("recordCount", 0)
                 ),
+            }
+        statuses.append(
+            {
+                **sent,
                 "errors": {
                     count.get("reason"): int(count.get("recordCount", 0))
                     for count in entry.get("errorInfo", {}).get(

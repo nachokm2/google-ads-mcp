@@ -299,6 +299,59 @@ class TestConversionUploadStatus(unittest.TestCase):
             ],
         )
 
+    @patch.dict(os.environ, {data_manager.ENABLE_ENV_VAR: "true"})
+    @patch("ads_mcp.data_manager.call")
+    def test_summarizes_audience_uploads(self, call):
+        call.return_value = {
+            "requestStatusPerDestination": [
+                {
+                    "destination": {"productDestinationId": "555"},
+                    "requestStatus": "SUCCESS",
+                    "audienceMembersIngestionStatus": {
+                        "userDataIngestionStatus": {
+                            "recordCount": "671",
+                            "userIdentifierCount": "1311",
+                            "uploadMatchRateRange": "MATCH_RATE_RANGE_41_TO_50",
+                        }
+                    },
+                }
+            ]
+        }
+
+        result = conversions.get_conversion_upload_status(request_id="req-7")
+
+        self.assertEqual(
+            result["destinations"],
+            [
+                {
+                    "user_list_id": "555",
+                    "status": "SUCCESS",
+                    "members_sent": 671,
+                    "match_rate_range": "41_TO_50",
+                    "errors": {},
+                    "warnings": {},
+                }
+            ],
+        )
+
+    @patch.dict(os.environ, {data_manager.ENABLE_ENV_VAR: "true"})
+    @patch("ads_mcp.data_manager.call")
+    def test_audience_uploads_before_matching(self, call):
+        call.return_value = {
+            "requestStatusPerDestination": [
+                {
+                    "destination": {"productDestinationId": "555"},
+                    "requestStatus": "PROCESSING",
+                    "audienceMembersIngestionStatus": {},
+                }
+            ]
+        }
+
+        result = conversions.get_conversion_upload_status(request_id="req-7")
+
+        self.assertEqual(result["destinations"][0]["members_sent"], 0)
+        self.assertIsNone(result["destinations"][0]["match_rate_range"])
+
     def test_rejects_invalid_request_ids(self):
         with self.assertRaises(ToolError):
             conversions.get_conversion_upload_status(request_id="a b'")
