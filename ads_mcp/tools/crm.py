@@ -607,6 +607,7 @@ def sync_crm_audience(
     if not validate_only:
         result["next_step"] = (
             "Google matches the members within 48 hours. The audience can "
-            "be used for targeting once it has at least 100 matched members."
+            "be used for targeting once it has at least 100 matched members. "
+            "Check each request_id with get_conversion_upload_status."
         )
     return result

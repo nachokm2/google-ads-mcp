@@ -95,7 +95,9 @@ The `mutate` namespace adds tools that modify Google Ads data:
 - `upload_offline_conversions`, `get_conversion_upload_status`: Upload
   offline conversions identified by gclid or, for enhanced conversions for
   leads, by email or phone (hashed with SHA-256 on the server and never logged),
-  and check how Google processed them. Google Ads only accepts uploads from
+  and check how Google processed them (also the uploads of
+  `sync_crm_conversions` and `sync_crm_audience`, with the audience match
+  rate). Google Ads only accepts uploads from
   new integrations through the Data Manager API, so these tools need it:
   enable the Data Manager API in the Google Cloud project of the OAuth
   client, add the `https://www.googleapis.com/auth/datamanager` scope to its
@@ -216,6 +218,11 @@ namespaces:
 1.  The MCP Server will expose your data to the Agent or LLM that you connect to it.
 1.  If you have technical issues, please use the [GitHub issue tracker](https://github.com/googleads/google-ads-mcp/issues).
 1.  To help us collect usage data, you will notice an extra header has been added to your API calls: this data is used to improve the product.
+1.  The Docker image installs the dependency versions pinned in
+    `requirements.lock`, so a new release of a dependency cannot change a
+    deployed server by itself. To update them, regenerate the file with
+    `uv pip compile pyproject.toml --python-version 3.12 --python-platform linux --no-header -o requirements.lock`,
+    run the tests and deploy.
 
 ## Setup instructions
 
@@ -583,7 +590,8 @@ Make sure to set the required environment variables:
 - `GOOGLE_ADS_MCP_STORAGE_TYPE`: (Recommended for production) Storage backend to persist OAuth tokens across instances. Set it to `firestore` to use Firestore through Application Default Credentials, which needs no VPC connector, or to `redis` along with `GOOGLE_ADS_MCP_STORAGE_REDIS_URL`.
 
   Using `firestore` requires three things: build the image with the extra
-  installed (change the Dockerfile to `uv pip install --system .[firestore]`),
+  installed (change the Dockerfile to
+  `uv pip install --system -r requirements.lock .[firestore]`),
   create a Firestore database in the project, since one is not provisioned
   automatically, and grant the Cloud Run service account `roles/datastore.user`.
   Note that entries are not expired automatically: the store filters expired
