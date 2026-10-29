@@ -12,7 +12,9 @@ COPY . .
 
 # Install the project and its dependencies
 # We use --system to install into the system Python environment in the container
-RUN uv pip install --system .
+# requirements.lock pins every dependency so that a new release cannot change
+# the deployed server by itself; see the README to update it.
+RUN uv pip install --system -r requirements.lock .
 
 # Codex CLI 0.146 reports the RFC 9207 `iss` value as missing from the local
 # OAuth callback, even though FastMCP constructs the redirect with `iss` and
